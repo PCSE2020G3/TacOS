@@ -59,7 +59,8 @@ int playingScreenSelectedItem = 0;    //
 
 int play_volume_num = 3;
 int[] screen_play_pos ={0, 3, 5, 7};
-char[] fav_path = array(13);
+int fav_index = -1;
+int fav_list_index = -1;
 char[] volume_char = {'0', '1', '2', '3', '4', '5'};
 int showingListPage = 0;
 int screen_list_num_bak = 0;
@@ -174,10 +175,17 @@ public void shellMain() {
         locateXY(1, showingPlayList + 1);
         putCh('*');
       } else if (buttonNumber == 6){
-        //fav_musicの再生
-        updateTitle(fav_path);
-        spiResetDecodeTime();
-        play(fav_path);
+          if(fav_index != -1){
+            showingScreen = 1;
+            listScreenSelectedItem = 0;
+            showingScreen = 2;
+            showingListPage = fav_index / 7;
+            listScreenSelectedItem = fav_index % 7;
+            lcdInit(2, null, -1);
+            showingPlayList = fav_list_index;
+            playMusic(showingListPage * 7 + listScreenSelectedItem);
+            //fav_musicの再生
+          }
       }
     } else if (showingScreen == 1) {
       if (buttonNumber == 1) {
@@ -242,7 +250,8 @@ public void shellMain() {
         //アスタリスクの位置の更新
       } else if (buttonNumber == 6) {
         //fav_musicの登録
-        fav_path = getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem);
+        fav_index = showingListPage * 7 + listScreenSelectedItem;
+        fav_list_index = showingPlayList;
       }
     } else if (showingScreen == 2) {
       if (buttonNumber == 1) {
@@ -370,10 +379,12 @@ public void shellMain() {
         putCh('*');
       } else if (buttonNumber == 6) {
         //fav_musicの再生
-        lcdInit(2, null, -1);
-        updateTitle(fav_path);
-        spiResetDecodeTime();
-        play(fav_path);
+        if(fav_index != -1){
+          showingListPage = fav_index / 7;
+          listScreenSelectedItem = fav_index % 7;
+          showingPlayList = fav_list_index;
+          playMusic(showingListPage * 7 + listScreenSelectedItem);
+        }
       }
 
       //シークバー表示
@@ -396,7 +407,7 @@ public void shellMain() {
           isPlaying = 0;
           if (showingListPage * 7 + listScreenSelectedItem + 1 < getFileNum()) {
             listScreenSelectedItem = listScreenSelectedItem + 1;
-            playMusic(showingListPage * 7 + listScreenSelectedItem + 1);
+            playMusic(showingListPage * 7 + listScreenSelectedItem);
           }
         }
         else if(repeatMode == 0){
@@ -413,6 +424,9 @@ public void shellMain() {
           if(aaa == (showingListPage * 7 + listScreenSelectedItem) && aaa != 0){
             aaa = (aaa + flag) % getFileNum();
             flag = flag + 1;
+            if(flag == getFileNum()){
+              flag = 1;
+            }
           }
           showingListPage = aaa / 7;
           listScreenSelectedItem = aaa % 7;
