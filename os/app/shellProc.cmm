@@ -260,8 +260,6 @@ public void shellMain() {
           // 前の曲を再生
           if (0 < showingListPage * 7 + listScreenSelectedItem + 1) {
             listScreenSelectedItem = listScreenSelectedItem - 1;
-            locateXY(2,1);
-            putStr("[+-----------]");
             playMusic(showingListPage * 7 + listScreenSelectedItem - 1);
           }
         } else if (playingScreenSelectedItem == 1) {
@@ -302,8 +300,6 @@ public void shellMain() {
           // 次の曲を再生
           if (showingListPage * 7 + listScreenSelectedItem + 1 < getFileNum()) {
             listScreenSelectedItem = listScreenSelectedItem + 1;
-            locateXY(2,1);
-            putStr("[+-----------]");
             playMusic(showingListPage * 7 + listScreenSelectedItem + 1);
           }
         } else if (playingScreenSelectedItem == 1) {
