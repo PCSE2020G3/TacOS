@@ -173,8 +173,8 @@ public void shellMain() {
 
         playingMusic[0] = getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem);
         lcdInit(2, playingMusic, -1);
-        updateRecentPlayList(showingListPage * 7 + listScreenSelectedItem - 1);
-        updateMostPlayList(showingListPage * 7 + listScreenSelectedItem - 1);
+        updateRecentPlayList(showingListPage * 7 + listScreenSelectedItem);
+        updateMostPlayList(showingListPage * 7 + listScreenSelectedItem);
         latestProgressCount = 0;
         pastProgressCount = 0;
         spiResetDecodeTime();

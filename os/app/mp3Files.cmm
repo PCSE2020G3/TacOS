@@ -101,18 +101,6 @@ public int getMp3PlayTime(char[] mp3Path){
   int lshift6 = mp3Stat.lenH << 6;
   int shift10 = lshift6 | rshift10;
 
-  #ifdef DEBUG
-
-    printF("mp3Stat.lenL, rshift10: %d, ", mp3Stat.lenL);
-    printF("%d \r\n", rshift10);
-    printF("mp3Stat.lenH, lshift6: %d,", mp3Stat.lenH);
-    printF("%d \r\n", lshift6);
-    printF("shift10: %d \r\n", shift10);
-    printF("version: %d \r\n", mpegVersion);
-    printF("rate: %d \r\n", bps);
-    printF("time: %d \r\n", shift10 * 8 / bps);
-  #endif
-
   return shift10 * 8 / bps;
 }
 
@@ -132,9 +120,9 @@ public void mp3FilesInit() {
   close(fd);
 }
 
-// n 番目ファイル名を返す（1<=n && n<=100）
+// n 番目ファイル名を返す（1<=n && n<32）
 public char[] getMp3FileName(int n) {
-  if (0<=n && n<=numFile) {
+  if (0<=n && n<32) {
     return fnames[n];
   }
   return null;
