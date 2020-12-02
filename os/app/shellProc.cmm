@@ -283,7 +283,7 @@ public void shellMain() {
             putStr("OFF");
           }
           else {
-            putStr("ON");
+            putStr("ON ");
           }
         } else if (playingScreenSelectedItem == 3) {
           if (play_volume_num < 5) {
