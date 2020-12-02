@@ -36,6 +36,7 @@
 #include "mp3PlayList.hmm"
 #include "shellProc.hmm"
 
+
 //-----------------------------------------------------------------------------
 // スイッチの読み取り
 //-----------------------------------------------------------------------------
@@ -71,6 +72,8 @@ int isPlaying = 0;
 int playingMusicTime = 0;
 int latestProgressCount = 0;
 int pastProgressCount = 0;
+int aaa = 0;
+int flag = 1;
 
 int readSw() {
   int sw = ~in(0x18) & SWS;                         // スイッチを読み正論理に変換
@@ -251,7 +254,8 @@ public void shellMain() {
           updateMostPlayList(showingListPage * 7 + listScreenSelectedItem);
           playingMusicTime = getMp3PlayTime(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
           spiResetDecodeTime();
-          play(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
+          playingMusic[0] = getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem);
+          //play(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
           play(playingMusic[0]);
         }
         isPlaying = (isPlaying + 1) % 2;
@@ -271,6 +275,9 @@ public void shellMain() {
           locateXY(10, screen_play_pos[playingScreenSelectedItem]);
           if (repeatMode == 0){
             putStr("TRACK");
+            locateXY(10, screen_play_pos[playingScreenSelectedItem+1]);
+            putStr("OFF");
+            shuffleMode = 0;
           }
           else {
             putStr("OFF  ");
@@ -284,6 +291,9 @@ public void shellMain() {
           }
           else {
             putStr("ON ");
+            locateXY(10, screen_play_pos[playingScreenSelectedItem-1]);
+            putStr("OFF  "); 
+            repeatMode = 1;           
           }
         } else if (playingScreenSelectedItem == 3) {
           if (play_volume_num < 5) {
@@ -310,6 +320,9 @@ public void shellMain() {
           locateXY(10, screen_play_pos[playingScreenSelectedItem]);
           if (repeatMode == 0){
             putStr("TRACK");
+            locateXY(10, screen_play_pos[playingScreenSelectedItem+1]);
+            putStr("OFF");
+            shuffleMode = 0;
           }
           else {
             putStr("OFF  ");
@@ -319,10 +332,13 @@ public void shellMain() {
           shuffleMode = (shuffleMode + 1) % 2;
           locateXY(10, screen_play_pos[playingScreenSelectedItem]);
           if (shuffleMode == 0){
-            putStr("ON ");
+            putStr("OFF"); 
           }
           else {
-            putStr("OFF");
+            putStr("ON ");
+            locateXY(10, screen_play_pos[playingScreenSelectedItem-1]);
+            putStr("OFF  "); 
+            repeatMode = 1;
           }
         } else if (playingScreenSelectedItem == 3) {
           if (play_volume_num > 0) {
@@ -335,6 +351,7 @@ public void shellMain() {
       } else if (buttonNumber == 4) {
         showingScreen = 1;
         screen_list_num_bak = listScreenSelectedItem;
+        stop();
         if (showingPlayList == 0){
           lcdInit(1, getSevenMp3Files(showingListPage * 7), 0);
         }
@@ -351,6 +368,12 @@ public void shellMain() {
         }
         locateXY(1,listScreenSelectedItem+1);
         putCh('*');
+        shuffleMode = 0;
+        repeatMode = 0;
+        play_volume_num = 3;
+        isPlaying = 0;
+        playingScreenSelectedItem = 0;
+
       } else if (buttonNumber == 5) {
         //アスタリスクの位置の更新
         locateXY(1, screen_play_pos[playingScreenSelectedItem]);
@@ -391,11 +414,34 @@ public void shellMain() {
           pastProgressCount = latestProgressCount;
         }
         else if(repeatMode == 0){
+          stop();
+          isPlaying = 0;
           updateRecentPlayList(showingListPage * 7 + listScreenSelectedItem);
           updateMostPlayList(showingListPage * 7 + listScreenSelectedItem);
           playingMusicTime = getMp3PlayTime(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
           spiResetDecodeTime();
-          play(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
+          //play(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
+          play(playingMusic[0]);
+        }
+        else if(repeatMode == 1){
+          aaa = spiGetDecodeTime() % getFileNum();
+          if(aaa == (showingListPage * 7 + listScreenSelectedItem) && aaa != 0){
+            aaa = (aaa + flag) % getFileNum();
+            flag = flag + 1;
+          } 
+          showingListPage = aaa / 7;
+          listScreenSelectedItem = aaa % 7;
+          stop();
+          isPlaying = 0;
+          updateRecentPlayList(showingListPage * 7 + listScreenSelectedItem);
+          updateMostPlayList(showingListPage * 7 + listScreenSelectedItem);
+          playingMusic[0] = getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem + 1);
+          playingMusicTime = getMp3PlayTime(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
+          spiResetDecodeTime();
+          
+          locateXY(2,0);
+          putStr(playingMusic[0]);
+          //play(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
           play(playingMusic[0]);
         }
       }
