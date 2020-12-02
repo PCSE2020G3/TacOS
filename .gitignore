@@ -6,3 +6,4 @@
 *.sym
 *.dSYM
 *.lock
+os/kernel0.bin

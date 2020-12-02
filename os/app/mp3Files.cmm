@@ -45,7 +45,7 @@ int numFile;                                          // ファイルの個数
 char[] mp3Dir = "/MP3";
 char[] path = array(18);                             // /MP3/12345678.123
 
-char[] fnameToPath(char[] fname) {
+public char[] fnameToPath(char[] fname) {
   strCpy(path, mp3Dir);
   strCat(path, "/");
   strCat(path, fname);
