@@ -390,6 +390,14 @@ public void shellMain() {
           putCh('+');
           pastProgressCount = latestProgressCount;
         }
+        else if(repeatMode == 0){
+          updateRecentPlayList(showingListPage * 7 + listScreenSelectedItem);
+          updateMostPlayList(showingListPage * 7 + listScreenSelectedItem);
+          playingMusicTime = getMp3PlayTime(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
+          spiResetDecodeTime();
+          play(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
+          play(playingMusic[0]);
+        }
       }
     }
     sleep(10);                                      // 10ms に一度
