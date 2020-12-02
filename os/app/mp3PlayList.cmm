@@ -58,7 +58,13 @@ public void updateMostPlayList(int fileNumber){
   }
 
   if (1 < mostCount[fileNumber]) {  // すでに曲が登録されていれば消す
-    for (int j = fileNumber; j < 31; j=j+1){
+    int depIndex = 0;
+    for (; depIndex < 31; depIndex=depIndex+1){
+      if (most[depIndex] == fileNumber){
+        break;
+      }
+    }
+    for (int j = depIndex; j < 31; j=j+1){
       most[j] = most[j+1];
     }
     most[31] = -1;
