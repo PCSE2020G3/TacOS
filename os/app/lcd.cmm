@@ -108,6 +108,11 @@ public void lcdInit(int scene_num, char[][] titles, int list_num){
  }
 }
 
+public void updateTitle(char[] title) {
+  locateXY(2, 0);
+  putStr(title);
+}
+
 public void cls() {
   for (int i=0; i<8; i=i+1) {
     locateXY(0, i);

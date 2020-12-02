@@ -34,3 +34,4 @@ public char[] getPathFromFileName(char[] fileName);     // n 番目パス名を�
 public int getMp3PlayTime(char[] mp3Path);
 public char[][] getSevenMp3Files(int start);
 public int getFileNum();
+public char[] fnameToPath(char[] fname);

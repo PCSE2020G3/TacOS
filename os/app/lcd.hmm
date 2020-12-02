@@ -33,3 +33,4 @@ public void putStr(char[] str);            // カーソル位置に文字列表�
 public void putDec(int val, int width);    // カーソル位置に10進数表示
 public void lcdInit(int scene_num, char[][] titles, int list_num); // シーン切り替え時LCD描画
 public void cls();                         // 画面のクリア
+public void updateTitle(char[] title);
