@@ -260,6 +260,8 @@ public void shellMain() {
           // 前の曲を再生
           if (0 < showingListPage * 7 + listScreenSelectedItem + 1) {
             listScreenSelectedItem = listScreenSelectedItem - 1;
+            locateXY(2,1);
+            putStr("[+-----------]");
             playMusic(showingListPage * 7 + listScreenSelectedItem - 1);
           }
         } else if (playingScreenSelectedItem == 1) {
@@ -300,6 +302,8 @@ public void shellMain() {
           // 次の曲を再生
           if (showingListPage * 7 + listScreenSelectedItem + 1 < getFileNum()) {
             listScreenSelectedItem = listScreenSelectedItem + 1;
+            locateXY(2,1);
+            putStr("[+-----------]");
             playMusic(showingListPage * 7 + listScreenSelectedItem + 1);
           }
         } else if (playingScreenSelectedItem == 1) {
@@ -376,7 +380,7 @@ public void shellMain() {
         play(fav_path);
       }
 
-      //表示部作成中
+      //シークバー表示
       if (playingMusicTime != 0){
         latestProgressCount = spiGetDecodeTime()*12 / playingMusicTime;// 0から11(12?)になるはず
       } else{
