@@ -224,6 +224,8 @@ public void shellMain() {
         showingScreen = 0;
         showingPlayList = 0;
         lcdInit(showingScreen, null, 0);
+        listScreenSelectedItem = 0;
+        showingListPage = 0;
         //画面遷移
       } else if (buttonNumber == 5) {
         locateXY(1, listScreenSelectedItem+1);//前回のscreen＿list＿buttonNumberの位置の＊を-に変える
@@ -231,6 +233,7 @@ public void shellMain() {
         listScreenSelectedItem = (listScreenSelectedItem + 1) % 7; //listScreenSelectedItem更新
         locateXY(1, listScreenSelectedItem+1);//screen＿list＿buttonNumberの位置の-を*に変える
         putCh('*');
+
         //アスタリスクの位置の更新
       } else if (buttonNumber == 6) {
         //fav_musicの登録
