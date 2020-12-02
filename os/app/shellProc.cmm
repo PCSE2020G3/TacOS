@@ -132,6 +132,7 @@ public void shellMain() {
     if (showingScreen == 0) {
       if (buttonNumber == 1) {
         showingScreen = 1;
+        listScreenSelectedItem = 0;
         // 画面遷移のメソッド呼び出し
         if (showingPlayList == 0){
           lcdInit(1, getSevenMp3Files(0), 0);
