@@ -185,13 +185,17 @@ public void shellMain() {
         if (showingListPage > 0) {
           showingListPage = showingListPage - 1;
           if (showingPlayList == 0){
-            lcdInit(1, getSevenMp3Files(showingListPage * 7 + listScreenSelectedItem), 0);
+            lcdInit(1, getSevenMp3Files(showingListPage * 7), 0);
+            listScreenSelectedItem = 0;
+
           }
           else if (showingPlayList == 1){
-            lcdInit(1, getSevenRecentMp3Name(showingListPage * 7 + listScreenSelectedItem), 1);
+            lcdInit(1, getSevenRecentMp3Name(showingListPage * 7), 1);
+            listScreenSelectedItem = 0;
           }
           else {
-            lcdInit(1, getSevenMostMp3Name(showingListPage * 7 + listScreenSelectedItem), 2);
+            lcdInit(1, getSevenMostMp3Name(showingListPage * 7), 2);
+            listScreenSelectedItem = 0;
           }
         }
         //リスト参照
@@ -201,13 +205,16 @@ public void shellMain() {
         if (showingListPage < getFileNum()/7){
           showingListPage = showingListPage + 1;
           if (showingPlayList == 0){
-            lcdInit(1, getSevenMp3Files(showingListPage * 7 + listScreenSelectedItem), 0);
+            lcdInit(1, getSevenMp3Files(showingListPage * 7), 0);
+            listScreenSelectedItem = 0;
           }
           else if (showingPlayList == 1){
-            lcdInit(1, getSevenRecentMp3Name(showingListPage * 7 + listScreenSelectedItem), 1);
+            lcdInit(1, getSevenRecentMp3Name(showingListPage * 7), 1);
+            listScreenSelectedItem = 0;
           }
           else {
-            lcdInit(1, getSevenMostMp3Name(showingListPage * 7 + listScreenSelectedItem), 2);
+            lcdInit(1, getSevenMostMp3Name(showingListPage * 7), 2);
+            listScreenSelectedItem = 0;
           }
         }
         //リスト参照
@@ -269,10 +276,10 @@ public void shellMain() {
           shuffleMode = (shuffleMode + 1) % 2;
           locateXY(10, screen_play_pos[playingScreenSelectedItem]);
           if (shuffleMode == 0){
-            putStr("ON ");
+            putStr("OFF");
           }
           else {
-            putStr("OFF");
+            putStr("ON");
           }
         } else if (playingScreenSelectedItem == 3) {
           if (play_volume_num < 5) {
@@ -325,13 +332,13 @@ public void shellMain() {
         showingScreen = 1;
         screen_list_num_bak = listScreenSelectedItem;
         if (showingPlayList == 0){
-          lcdInit(1, getSevenMp3Files(0), 0);
+          lcdInit(1, getSevenMp3Files(showingListPage * 7), 0);
         }
         else if (showingPlayList == 1){
-          lcdInit(1, getSevenRecentMp3Name(0), 1);
+          lcdInit(1, getSevenRecentMp3Name(showingListPage * 7), 1);
         }
         else {
-          lcdInit(1, getSevenMostMp3Name(0), 2);
+          lcdInit(1, getSevenMostMp3Name(showingListPage * 7), 2);
         }
         listScreenSelectedItem = screen_list_num_bak;
         if(listScreenSelectedItem != 0){
