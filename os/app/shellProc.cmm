@@ -254,6 +254,8 @@ public void shellMain() {
           listScreenSelectedItem = listScreenSelectedItem - 1;
           latestProgressCount = 0;
           pastProgressCount = 0;
+          spiResetDecodeTime();
+          playingMusicTime = getMp3PlayTime(playingMusic[0]);
           play(playingMusic[0]);
         } else if (playingScreenSelectedItem == 1) {
           repeatMode = (repeatMode + 1) % 2;
@@ -293,6 +295,7 @@ public void shellMain() {
           latestProgressCount = 0;
           pastProgressCount = 0;
           spiResetDecodeTime();
+          playingMusicTime = getMp3PlayTime(playingMusic[0]);
           play(playingMusic[0]);
         } else if (playingScreenSelectedItem == 1) {
           repeatMode = (repeatMode + 1) % 2;
