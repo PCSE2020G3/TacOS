@@ -21,7 +21,7 @@
 
 /*
  * lcd.cmm : 液晶ディスプレイのドライバ
- *
+ * 2020.11.13 : lcdInit作成
  * 2020.08.23 : spitestの一部から組み込み用に転用
  * 2019.08.26 : 液晶の上下をもとに戻す．リセット機能を util.cmm に移動する．
  * 2019.08.18 : 液晶の上下を逆にする
@@ -80,6 +80,41 @@ public void putDec(int val, int width) {
   for (w=w-1; w>=0; w=w-1) {
     putCh(decBuf[w]);
   }
+}
+
+char[][][] initScene = {{"HOME           ", "*ALL           ", "-RECENT RANK   ", "-MOST   RANK   ", "               ","               ", "               ", "               "},
+                    {"LIST-          ", "*              ", "-              ", "-              ", "-              ", "-              ", "-              ", "-              "},
+                    {"*              ", " [+-----------]", "               ", "-REPEAT [TRACK]", "               ", "-SHUFFLE[OFF]  ", "               ", "-VOLUME [3/5]  "}};
+char[][] lists = {"ALL   ", "RECENT","MOST  "};
+
+
+public void lcdInit(int scene_num, char[][] titles, int list_num){
+  cls();
+  for (int i=0;i<8;i=i+1){
+    locateXY(1,i);//最初の一マスは空白のため2マス目から
+    putStr(initScene[scene_num][i]);
+  }
+ if (scene_num == 1){
+   for (int i=1;i<8;i=i+1){
+        locateXY(2,i);
+        putStr(titles[i-1]);
+   }
+   locateXY(6,0);
+   putStr(lists[list_num]);
+ }
+ else if(scene_num==2){
+   locateXY(2,0);
+   putStr(titles[0]);
+ }
+}
+
+public void updateTitle(char[] title) {
+  locateXY(2, 0);
+  putStr("              ");
+  locateXY(2, 0);
+  putStr(title);
+  locateXY(2,1);
+  putStr("[+-----------]");
 }
 
 public void cls() {

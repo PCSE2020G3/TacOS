@@ -1,0 +1,116 @@
+#include <fs.hmm>
+#include <util.hmm>
+#include "appUtil.hmm"
+#include "mp3PlayList.hmm"
+#include "mp3Files.hmm"
+#include <string.hmm>
+
+int[] recent = array(32);
+int[] most = array(32);
+int[] mostCount = array(32);
+
+char[][] sevenRecentPlayList = array(7, 13);
+char[][] sevenMostPlayList = array(7, 13);
+
+public void initPlayList(){
+  for (int i = 0; i < 32; i=i+1) {
+    recent[i] = -1;
+    most[i] = -1;
+    mostCount[i] = 0;
+  }
+}
+
+public void updateRecentPlayList(int fileNumber){
+  int i = 0;
+
+  for (; i < 32; i=i+1){
+    if(recent[i] == -1){
+      break;
+    } else if (recent[i] == fileNumber){
+      break;
+    }
+  }
+
+  if (i != 0){
+    for (; 0 < i; i=i-1){
+      recent[i] = recent[i-1];
+    }
+  }
+
+  recent[0] = fileNumber;
+}
+
+public void updateMostPlayList(int fileNumber){
+  if (mostCount[fileNumber] == 0) {
+    mostCount[fileNumber] = 1;
+  } else {
+    mostCount[fileNumber] = mostCount[fileNumber] + 1;
+  }
+
+  int i = 0;  // 更新場所
+
+  for (; i < 32; i=i+1){
+    if (most[i] == -1){   // データがない(一番小さい)
+      break;
+    } else if (mostCount[most[i]] <= mostCount[fileNumber]){ // 再生する曲のほうが再生回数が多い
+      break;
+    }
+  }
+
+  if (1 < mostCount[fileNumber]) {  // すでに曲が登録されていれば消す
+    int depIndex = 0;
+    for (; depIndex < 31; depIndex=depIndex+1){
+      if (most[depIndex] == fileNumber){
+        break;
+      }
+    }
+    for (int j = depIndex; j < 31; j=j+1){
+      most[j] = most[j+1];
+    }
+    most[31] = -1;
+  }
+
+  for (int j = 31; i < j; j=j-1) {
+    most[j] = most[j-1];
+  }
+  most[i] = fileNumber;
+}
+
+// n 番目ファイル名を返す（0<=n && n<32）
+public char[] getRecentMp3Name(int n) {
+  if (0<=n && n<32) {
+    return getMp3FileName(recent[n]);
+  }
+  return null;
+}
+
+public char[][] getSevenRecentMp3Name(int start){
+  for (int i=0; i<7; i=i+1){
+    if (getRecentMp3Name(start + i) != null) {
+      sevenRecentPlayList[i] = getRecentMp3Name(start + i);
+    } else {
+      sevenRecentPlayList[i] = "NONE";
+    }
+  }
+  return sevenRecentPlayList;
+}
+
+// n 番目ファイル名を返す（0<=n && n<32）
+public char[] getMostMp3Name(int n) {
+  if (0<=n && n<32) {
+    return getMp3FileName(most[n]);
+  }
+  return null;
+}
+
+public char[][] getSevenMostMp3Name(int start){
+  for (int i=0; i<7; i=i+1){
+    if (getMostMp3Name(start + i) != null) {
+      sevenMostPlayList[i] = getMostMp3Name(start + i);
+    } else {
+      sevenMostPlayList[i] = "NONE";
+    }
+  }
+
+  return sevenMostPlayList;
+}

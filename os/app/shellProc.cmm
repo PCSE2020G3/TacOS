@@ -33,7 +33,9 @@
 #include "mp3Proc.hmm"
 #include "spi.hmm"
 #include "mp3Files.hmm"
+#include "mp3PlayList.hmm"
 #include "shellProc.hmm"
+
 
 //-----------------------------------------------------------------------------
 // スイッチの読み取り
@@ -50,6 +52,29 @@
 int sw0 = 0x00;                                     // 前回の状態(デバウンス前)
 int sw1 = 0x00;                                     // 前回の状態(デバウンス後)
 
+int showingScreen = 0;
+int showingPlayList = 0;    // 0: all, 1: recent, 2: most
+int listScreenSelectedItem = 0;
+int playingScreenSelectedItem = 0;    //
+
+int play_volume_num = 3;
+int[] screen_play_pos ={0, 3, 5, 7};
+int fav_index = -1;
+int fav_list_index = -1;
+char[] volume_char = {'0', '1', '2', '3', '4', '5'};
+int showingListPage = 0;
+int screen_list_num_bak = 0;
+
+int repeatMode = 0;
+int shuffleMode = 0;
+int isPlaying = 0;
+
+int playingMusicTime = 0;
+int latestProgressCount = 0;
+int pastProgressCount = 0;
+int aaa = 0;
+int flag = 1;
+
 int readSw() {
   int sw = ~in(0x18) & SWS;                         // スイッチを読み正論理に変換
   int swd = sw & sw0;                               // デバウンス
@@ -60,44 +85,58 @@ int readSw() {
 }
 
 int swToNum(int sw) {
-  int num = -1;
+  int buttonNumber = -1;
   if ((sw & SW6)!=0) {                              // 6 番のスイッチが押された
-    num = 6;
+    buttonNumber = 6;
   } else if ((sw & SW5)!=0) {                       // 5 番のスイッチが押された
-    num = 5;
+    buttonNumber = 5;
   } else if ((sw & SW4)!=0) {                       // 4 番のスイッチが押された
-    num = 4;
+    buttonNumber = 4;
   } else if ((sw & SW3)!=0) {                       // 3 番のスイッチが押された
-    num = 3;
+    buttonNumber = 3;
   } else if ((sw & SW2)!=0) {                       // 2 番のスイッチが押された
-    num = 2;
+    buttonNumber = 2;
   } else if ((sw & SW1)!=0) {                       // 1 番のスイッチが押された
-    num = 1;
+    buttonNumber = 1;
   }
-  return num;
-}
-      
-//-----------------------------------------------------------------------------
-// 画面表示
-//-----------------------------------------------------------------------------
-void demoScreen() {
-  cls();                                            // LCDをクリアする
-  locateXY(0,0); putStr("MP3 Player demo");
-  for (int i=1; i<=5; i=i+1) {                      // スイッチ1〜5に付いて
-    locateXY(2,i+1);
-    putCh(chr(ord('0')+i));                         // スイッチの番号
-    putStr(":");
-    char[] fname = mp3FilesGetName(i);              // 対応するファイル名
-    if (fname!=null) putStr(fname);
-  }
-  locateXY(2,7);
-  putStr("6:stop");                                 // 6番のスイッチ
+  return buttonNumber;
 }
 
-void asta(int y) {
-  demoScreen();
-  locateXY(0, y+1);
-  putCh('*');
+char[] getPlayingMusicPath(int n){
+  if (n < 0) {
+    n = 0;
+  }
+
+  if (showingPlayList == 0){
+    return getPathFromFileName(getMp3FileName(n));
+  } else if (showingPlayList == 1) {
+    return getPathFromFileName(getRecentMp3Name(n));
+  } else {
+    return getPathFromFileName(getMostMp3Name(n));
+  }
+
+  return null;
+}
+
+char[] playingMusic = array(13);
+
+void playMusic(int musicNumber){
+  if (showingPlayList == 0){
+    playingMusic = getMp3FileName(musicNumber);
+  } else if (showingPlayList == 1){
+    playingMusic = getRecentMp3Name(musicNumber);
+  }
+  else {
+    playingMusic = getMostMp3Name(musicNumber);
+  }
+  updateTitle(playingMusic);
+  updateRecentPlayList(musicNumber);
+  updateMostPlayList(musicNumber);
+  latestProgressCount = 0;
+  pastProgressCount = 0;
+  spiResetDecodeTime();
+  playingMusicTime = getMp3PlayTime(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
+  play(fnameToPath(playingMusic));
 }
 
 //-----------------------------------------------------------------------------
@@ -108,20 +147,295 @@ public void shellMain() {
   spiResetLcd();                                    // sleepを使用するので
   spiResetMp3();                                    //   プロセスが実行する
   mp3FilesInit();                                   // ファイル一覧を作る
-  demoScreen();                                     // 画面を初期化
+  initPlayList();
+  lcdInit(showingScreen, null, 0);                  //home画面表示
+
   for (;;) {
     int sw = readSw();
-    int num = swToNum(sw);
-    if (num==6) {                                   // 6 番のスイッチが押された
-      dbgPutStr("stop\n");
-      demoScreen();                                 // 画面を初期化
-      stop();
-    } else if (num>0 && mp3FilesGetName(num)!=null) { // ファイルと対応するボタン
-      demoScreen();                                 // 画面を初期化
-      asta(num);                                    // 再生中の曲に印を表示
-      play(mp3FilesGetPath(num));                   // 再生開始
-      dbgPutStr(mp3FilesGetPath(num));
-      dbgPutStr("\n");
+    int buttonNumber = swToNum(sw);
+    if (showingScreen == 0) {
+      if (buttonNumber == 1) {
+        showingScreen = 1;
+        listScreenSelectedItem = 0;
+        // 画面遷移のメソッド呼び出し
+        if (showingPlayList == 0){
+          lcdInit(1, getSevenMp3Files(0), 0);
+        }
+        else if (showingPlayList == 1){
+          lcdInit(1, getSevenRecentMp3Name(0), 1);
+        }
+        else {
+          lcdInit(1, getSevenMostMp3Name(0), 2);
+        }
+      } else if(buttonNumber == 5){
+        //アスタリスクの位置の更新
+        locateXY(1, showingPlayList + 1);
+        putCh('-');
+        showingPlayList = (showingPlayList + 1) % 3;
+        locateXY(1, showingPlayList + 1);
+        putCh('*');
+      } else if (buttonNumber == 6){
+          if(fav_index != -1){
+            showingScreen = 1;
+            listScreenSelectedItem = 0;
+            showingScreen = 2;
+            showingListPage = fav_index / 7;
+            listScreenSelectedItem = fav_index % 7;
+            lcdInit(2, null, -1);
+            showingPlayList = fav_list_index;
+            playMusic(showingListPage * 7 + listScreenSelectedItem);
+            //fav_musicの再生
+          }
+      }
+    } else if (showingScreen == 1) {
+      if (buttonNumber == 1) {
+        //曲再生
+        stop();
+        showingScreen = 2;
+        lcdInit(2, null, -1);
+        playMusic(showingListPage * 7 + listScreenSelectedItem);
+
+      } else if (buttonNumber == 2) {
+        //ページ戻し
+        if (showingListPage > 0) {
+          showingListPage = showingListPage - 1;
+          if (showingPlayList == 0){
+            lcdInit(1, getSevenMp3Files(showingListPage * 7), 0);
+            listScreenSelectedItem = 0;
+          }
+          else if (showingPlayList == 1){
+            lcdInit(1, getSevenRecentMp3Name(showingListPage * 7), 1);
+            listScreenSelectedItem = 0;
+          }
+          else {
+            lcdInit(1, getSevenMostMp3Name(showingListPage * 7), 2);
+            listScreenSelectedItem = 0;
+          }
+        }
+        //リスト参照
+        //曲リストを移動（lcd変更）
+      } else if (buttonNumber == 3) {
+        //ページ進め
+        if (showingListPage < getFileNum()/7){
+          showingListPage = showingListPage + 1;
+          if (showingPlayList == 0){
+            lcdInit(1, getSevenMp3Files(showingListPage * 7), 0);
+            listScreenSelectedItem = 0;
+          }
+          else if (showingPlayList == 1){
+            lcdInit(1, getSevenRecentMp3Name(showingListPage * 7), 1);
+            listScreenSelectedItem = 0;
+          }
+          else {
+            lcdInit(1, getSevenMostMp3Name(showingListPage * 7), 2);
+            listScreenSelectedItem = 0;
+          }
+        }
+        //リスト参照
+        //曲リストを移動（lcd変更）
+      } else if (buttonNumber == 4) {
+        showingScreen = 0;
+        showingPlayList = 0;
+        lcdInit(showingScreen, null, 0);
+        listScreenSelectedItem = 0;
+        showingListPage = 0;
+        //画面遷移
+      } else if (buttonNumber == 5) {
+        locateXY(1, listScreenSelectedItem+1);//前回のscreen＿list＿buttonNumberの位置の＊を-に変える
+        putCh('-');
+        listScreenSelectedItem = (listScreenSelectedItem + 1) % 7; //listScreenSelectedItem更新
+        locateXY(1, listScreenSelectedItem+1);//screen＿list＿buttonNumberの位置の-を*に変える
+        putCh('*');
+
+        //アスタリスクの位置の更新
+      } else if (buttonNumber == 6) {
+        //fav_musicの登録
+        fav_index = showingListPage * 7 + listScreenSelectedItem;
+        fav_list_index = showingPlayList;
+      }
+    } else if (showingScreen == 2) {
+      if (buttonNumber == 1) {
+        //playとpauseの切り替え
+        if (isPlaying == 0){
+          stop();
+          latestProgressCount = 0;
+          pastProgressCount = 0;
+        } else {
+          playMusic(showingListPage * 7 + listScreenSelectedItem);
+        }
+        isPlaying = (isPlaying + 1) % 2;
+      } else if (buttonNumber == 2) {
+        if(playingScreenSelectedItem == 0) {
+          // 前の曲を再生
+          if (0 < showingListPage * 7 + listScreenSelectedItem + 1) {
+            listScreenSelectedItem = listScreenSelectedItem - 1;
+            playMusic(showingListPage * 7 + listScreenSelectedItem - 1);
+          }
+        } else if (playingScreenSelectedItem == 1) {
+          repeatMode = (repeatMode + 1) % 2;
+          locateXY(10, screen_play_pos[playingScreenSelectedItem]);
+          if (repeatMode == 0){
+            putStr("TRACK");
+            locateXY(10, screen_play_pos[playingScreenSelectedItem+1]);
+            putStr("OFF");
+            shuffleMode = 0;
+          }
+          else {
+            putStr("OFF  ");
+          }
+          // repeatが変わったことをplayコマンドに送信？（要相談）
+        } else if (playingScreenSelectedItem == 2) {
+          shuffleMode = (shuffleMode + 1) % 2;
+          locateXY(10, screen_play_pos[playingScreenSelectedItem]);
+          if (shuffleMode == 0){
+            putStr("OFF");
+          }
+          else {
+            putStr("ON ");
+            locateXY(10, screen_play_pos[playingScreenSelectedItem-1]);
+            putStr("OFF  ");
+            repeatMode = 1;
+          }
+        } else if (playingScreenSelectedItem == 3) {
+          if (play_volume_num < 5) {
+            locateXY(10, screen_play_pos[playingScreenSelectedItem]);
+            play_volume_num = play_volume_num + 1;
+            putCh(volume_char[play_volume_num]);
+            spiVolumeControl(play_volume_num);
+          }
+        }
+      } else if (buttonNumber == 3) {
+        if(playingScreenSelectedItem == 0) {
+          // 次の曲を再生
+          if (showingListPage * 7 + listScreenSelectedItem + 1 < getFileNum()) {
+            listScreenSelectedItem = listScreenSelectedItem + 1;
+            playMusic(showingListPage * 7 + listScreenSelectedItem + 1);
+          }
+        } else if (playingScreenSelectedItem == 1) {
+          repeatMode = (repeatMode + 1) % 2;
+          locateXY(10, screen_play_pos[playingScreenSelectedItem]);
+          if (repeatMode == 0){
+            putStr("TRACK");
+            locateXY(10, screen_play_pos[playingScreenSelectedItem+1]);
+            putStr("OFF");
+            shuffleMode = 0;
+          }
+          else {
+            putStr("OFF  ");
+          }
+          // repeatが変わったことをplayコマンドに送信？（要相談）
+        } else if (playingScreenSelectedItem == 2) {
+          shuffleMode = (shuffleMode + 1) % 2;
+          locateXY(10, screen_play_pos[playingScreenSelectedItem]);
+          if (shuffleMode == 0){
+            putStr("OFF");
+          }
+          else {
+            putStr("ON ");
+            locateXY(10, screen_play_pos[playingScreenSelectedItem-1]);
+            putStr("OFF  ");
+            repeatMode = 1;
+          }
+        } else if (playingScreenSelectedItem == 3) {
+          if (play_volume_num > 0) {
+            locateXY(10, screen_play_pos[playingScreenSelectedItem]);
+            play_volume_num = play_volume_num - 1;
+            putCh(volume_char[play_volume_num]);
+            spiVolumeControl(play_volume_num);
+          }
+        }
+      } else if (buttonNumber == 4) {
+        showingScreen = 1;
+        screen_list_num_bak = listScreenSelectedItem;
+        stop();
+        if (showingPlayList == 0){
+          lcdInit(1, getSevenMp3Files(showingListPage * 7), 0);
+        }
+        else if (showingPlayList == 1){
+          lcdInit(1, getSevenRecentMp3Name(showingListPage * 7), 1);
+        }
+        else {
+          lcdInit(1, getSevenMostMp3Name(showingListPage * 7), 2);
+        }
+        listScreenSelectedItem = screen_list_num_bak;
+        if(listScreenSelectedItem != 0){
+          locateXY(1,1);
+          putCh('-');
+        }
+        locateXY(1,listScreenSelectedItem+1);
+        putCh('*');
+        shuffleMode = 0;
+        repeatMode = 0;
+        play_volume_num = 3;
+        isPlaying = 0;
+        playingScreenSelectedItem = 0;
+
+      } else if (buttonNumber == 5) {
+        //アスタリスクの位置の更新
+        locateXY(1, screen_play_pos[playingScreenSelectedItem]);
+        putCh('-');
+        playingScreenSelectedItem = (playingScreenSelectedItem + 1) % 4;
+        locateXY(1, screen_play_pos[playingScreenSelectedItem]);
+        putCh('*');
+      } else if (buttonNumber == 6) {
+        //fav_musicの再生
+        if(fav_index != -1){
+          showingListPage = fav_index / 7;
+          listScreenSelectedItem = fav_index % 7;
+          showingPlayList = fav_list_index;
+          playMusic(showingListPage * 7 + listScreenSelectedItem);
+        }
+      }
+
+      //シークバー表示
+      if (playingMusicTime != 0){
+        latestProgressCount = spiGetDecodeTime()*12 / playingMusicTime;// 0から11(12?)になるはず
+      } else{
+        latestProgressCount = 0;
+      }
+      //progressCountが増えた(変わった)時にシークバー更新．
+      if (latestProgressCount != pastProgressCount){
+        if(latestProgressCount != 12){
+          locateXY(3+pastProgressCount, 1);
+          putCh('-');
+          locateXY(3+latestProgressCount, 1);
+          putCh('+');
+          pastProgressCount = latestProgressCount;
+        }
+        else if(repeatMode == 1 && shuffleMode == 0){
+          stop();
+          isPlaying = 0;
+          if (showingListPage * 7 + listScreenSelectedItem + 1 < getFileNum()) {
+            listScreenSelectedItem = listScreenSelectedItem + 1;
+            playMusic(showingListPage * 7 + listScreenSelectedItem);
+          }
+        }
+        else if(repeatMode == 0){
+          stop();
+          isPlaying = 0;
+          updateRecentPlayList(showingListPage * 7 + listScreenSelectedItem);
+          updateMostPlayList(showingListPage * 7 + listScreenSelectedItem);
+          playingMusicTime = getMp3PlayTime(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
+          spiResetDecodeTime();
+          play(getPlayingMusicPath(showingListPage * 7 + listScreenSelectedItem));
+        }
+        else if(shuffleMode == 1){
+          aaa = spiGetDecodeTime() % getFileNum();
+          if(aaa == (showingListPage * 7 + listScreenSelectedItem) && aaa != 0){
+            aaa = (aaa + flag) % getFileNum();
+            flag = flag + 1;
+            if(flag == getFileNum()){
+              flag = 1;
+            }
+          }
+          showingListPage = aaa / 7;
+          listScreenSelectedItem = aaa % 7;
+          stop();
+
+          playMusic(showingListPage * 7 + listScreenSelectedItem);
+          isPlaying = 0;
+        }
+      }
     }
     sleep(10);                                      // 10ms に一度
   }

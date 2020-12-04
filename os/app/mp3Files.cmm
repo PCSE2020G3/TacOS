@@ -28,25 +28,80 @@
  *
  */
 #include <fs.hmm>
+
 #include <util.hmm>
 #include "appUtil.hmm"
 #include "mp3Files.hmm"
 
+
 //-----------------------------------------------------------------------------
 // MP3ファイルの一覧（ただし，最大５個）
 //-----------------------------------------------------------------------------
-// ５つのファイル名
-char[][] fnames = array(5, 13);                     // 12345678.123
-int numFile;                                        // ファイルの個数
+// 32このファイル名
+char[][] fnames = array(32, 13);                     // 12345678.123
+char[][] allMp3Files = array(32, 13);
+int numFile;                                          // ファイルの個数
 
 char[] mp3Dir = "/MP3";
-char[] path = array(18);                            // /MP3/12345678.123
+char[] path = array(18);                             // /MP3/12345678.123
 
-char[] fnameToPath(char[] fname) {
+public char[] fnameToPath(char[] fname) {
   strCpy(path, mp3Dir);
   strCat(path, "/");
   strCat(path, fname);
   return path;
+}
+
+Stat mp3Stat = {0, 0, 0, 0};
+
+// 読み出しバッファ
+char[] tagInfoArray = array(3);
+
+int[] mpeg1Rates = {1, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 1};
+
+int[] mpeg2_5Rates = {1, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 1};
+
+public int getFileNum(){
+  return numFile;
+}
+
+public int getMp3PlayTime(char[] mp3Path){
+  int fd = open(path, READ_MODE);             // ファイルをオープン
+  if (fd < 0) {                               // オープンできない
+    panic("panic:can't open MP3 File");
+  }
+  if (seek(fd, 0, 0x400) == -1){  // 決め打ち
+    return 1;
+  }
+
+  if (read(fd, tagInfoArray, 3) == -1) {
+    printF("error");
+    return 1;
+  }
+
+  close(fd);
+
+  int mpegVersion = ord(tagInfoArray[1]) & 0x18;
+  mpegVersion = mpegVersion / 8;
+  int bitRate = ord(tagInfoArray[2]) & 0xf0;
+  bitRate = bitRate / 16;
+
+  int bps = 1;
+  if (mpegVersion == 0 || mpegVersion == 2) {
+    bps = mpeg2_5Rates[bitRate];
+  } else if (mpegVersion == 3){
+    bps = mpeg1Rates[bitRate];
+  }
+                               // ファイルをクローズ
+  if (stat(mp3Path, mp3Stat) == -1) {
+    printF("error");
+  }
+  int rshift10 = mp3Stat.lenL >> 10;
+  rshift10 = rshift10 & 0x003f;
+  int lshift6 = mp3Stat.lenH << 6;
+  int shift10 = lshift6 | rshift10;
+
+  return shift10 * 8 / bps;
 }
 
 // /MP3 ディレクトリからファイルの一覧を作る（初期化）
@@ -57,26 +112,39 @@ public void mp3FilesInit() {
   }
   Dir dir;
   int i = 0;
-  while (i<5 && (dir=readDir(fd, "MP3"))!=null) {   // 最大5つファイル名を読む
-    strCpy(fnames[i], dir.name);
-    i = i + 1;
+
+  for (int j = 0; j < 32; j=j+1) {
+    if ((dir=readDir(fd, "MP3"))!=null){
+      strCpy(fnames[j], dir.name);
+      i = i + 1;
+    } else {
+      fnames[j] = null;
+    }
   }
   numFile = i;
   close(fd);
 }
 
-// n 番目ファイル名を返す（1<=n && n<=5）
-public char[] mp3FilesGetName(int n) {
-  if (1<=n && n<=numFile) {
-    return fnames[n-1];
+// n 番目ファイル名を返す（1<=n && n<32）
+public char[] getMp3FileName(int n) {
+  if (0<=n && n<32) {
+    return fnames[n];
   }
   return null;
 }
 
-// n 番目パス名を返す（1<=n && n<=5）
-public char[] mp3FilesGetPath(int n) {
-  if (1<=n && n<=numFile) {
-    return fnameToPath(fnames[n-1]);
+public char[][] getSevenMp3Files(int start){
+  for (int i=0; i<7; i=i+1){
+    if (getMp3FileName(start + i) != null){
+      allMp3Files[i] = getMp3FileName(start + i);
+    } else {
+      allMp3Files[i] = "NONE";
+    }
   }
-  return null;
+  return allMp3Files;
+}
+
+// n 番目パス名を返す（1<=n && n<=100）
+public char[] getPathFromFileName(char[] fileName) {
+  return fnameToPath(fileName);
 }

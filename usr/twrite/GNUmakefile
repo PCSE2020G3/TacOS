@@ -2,7 +2,7 @@
 # TacOS Source Code
 #    Tokuyama kousen Educational Computer 16 bit Version
 #
-# Copyright (C) 2020 by
+# Copyright (C) 2016 - 2018 by
 #                      Dept. of Computer Science and Electronic Engineering,
 #                      Tokuyama College of Technology, JAPAN
 #
@@ -17,13 +17,24 @@
 # る損害に関しても，その責任を負わない．
 #
 #
-
+# GNUmakefile : ユーザプログラム用の Makefile
 #
-# app/GNUmakefile : 組み込みアプリの Makefile
+# 2018.11.24         : clean で *.dSYM を消すように変更
+# 2016.08.11         : 初期バージョン
 #
-# 2020.08.23 : 新規
+# $Id$
 #
 
-OBJS= spi.o font.o lcd.o mp3Proc.o shellProc.o appUtil.o mp3Files.o mp3PlayList.o
+#----------------------------------------------------------------------------
+NAME=twrite
+SRCS=${NAME}.cmm
+#----------------------------------------------------------------------------
 
-include ../Makefile.rul
+all : clean ${NAME}.exe # ${NAME}
+
+${NAME}.exe : ${SRCS}
+	cm2e -o ${NAME} -P ${SRCS}
+
+clean :
+	rm -f ${NAME} *.o *.lst *.sym *.exe *.map *~
+	rm -rf ${NAME}.dSYM
